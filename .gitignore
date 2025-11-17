@@ -1,0 +1,121 @@
+########################################
+###        GLOBAL SETTINGS           ###
+########################################
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env files (secret keys!)
+.env
+.env.*
+
+
+########################################
+###          DOTNET BACKEND          ###
+########################################
+
+# Build artifacts
+bin/
+obj/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# dotnet tools
+*.nupkg
+*.snk
+project.lock.json
+project.fragment.lock.json
+Artifacts/
+
+# ASP.NET publish outputs
+out/
+publish/
+wwwroot/dist/
+wwwroot/lib/
+
+
+########################################
+###          NODE FRONTEND           ###
+########################################
+
+# Node modules
+node_modules/
+
+# Next.js / React / Vite builds
+.next/
+out/
+build/
+dist/
+
+# Vite cache
+.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Bundler cache
+.cache/
+.eslintcache
+
+
+########################################
+###         FRONTEND ARTIFACTS       ###
+########################################
+
+# Local dev data
+*.local
+*.cache
+*.swp
+
+# Testing
+coverage/
+jest-html-reporters-*.html
+playwright-report/
+test-results/
+
+# Storybook
+.storybook-out/
+storybook-static/
+
+
+########################################
+###           MISC & IDE             ###
+########################################
+
+# MacOS
+.DS_Store
+
+# JetBrains
+.idea/
+
+# VSCode
+.vscode/
+history/
+*.code-workspace
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig
+
+########################################
+###          DOCKER (optional)       ###
+########################################
+
+docker-data/
+docker-compose.override.yml

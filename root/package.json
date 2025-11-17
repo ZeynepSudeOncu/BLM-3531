@@ -1,0 +1,46 @@
+{
+    "name": "logistics-frontend",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev -p 3000",
+        "build": "next build",
+        "start": "next start -p 3000",
+        "lint": "next lint",
+        "postinstall": "tailwindcss -v >/dev/null 2>&1 || echo 'Tailwind is optional'"
+    },
+    "dependencies": {
+        "axios": "^1.7.7",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "jsonwebtoken": "^9.0.2",
+        "lucide-react": "^0.461.0",
+        "next": "^15.0.3",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "sonner": "^1.5.0",
+        "tailwind-merge": "^3.3.1",
+        "tailwind-variants": "^3.1.1",
+        "zustand": "^4.5.5"
+    },
+    "devDependencies": {
+        "@types/jsonwebtoken": "^9.0.5",
+        "@types/node": "^22.9.0",
+        "@types/react": "^18.3.7",
+        "@types/react-dom": "^18.3.0",
+        "autoprefixer": "^10.4.21",
+        "eslint": "^9.12.0",
+        "eslint-config-next": "^15.0.3",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^3.4.18",
+        "typescript": "^5.6.3"
+    },
+    "description": "",
+    "main": "next.config.js",
+    "directories": {
+        "lib": "lib"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}

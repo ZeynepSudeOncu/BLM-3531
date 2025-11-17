@@ -1,0 +1,73 @@
+'use client';
+
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { login, getProfile, redirectForRole } from '@/lib/auth';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const sp = useSearchParams();
+
+  const [email, setEmail] = useState('admin@example.com');
+  const [password, setPassword] = useState('Pass123!');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setErr(null);
+    try {
+      const token = await login({ email, password });
+      localStorage.setItem('token', token); 
+
+      const me = await getProfile();
+const role = (me.roles?.[0] ?? 'Admin') as any;
+router.push(redirectForRole(role) as any);
+
+    } catch (e: any) {
+      setErr(e?.response?.data?.message || e?.message || 'Giriş başarısız');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="grid place-items-center min-h-[60vh] p-6">
+      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4 bg-white p-6 rounded-2xl shadow">
+        <h2 className="text-2xl font-semibold text-center">Giriş</h2>
+
+        <div className="space-y-2">
+          <label className="block text-sm">E-posta</label>
+          <input
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2"
+            type="email"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm">Parola</label>
+          <input
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2"
+            type="password"
+            required
+          />
+        </div>
+
+        {err && <p className="text-sm text-red-600">{err}</p>}
+
+        <button
+          disabled={loading}
+          className="w-full bg-black text-white rounded-lg py-2 disabled:opacity-50"
+        >
+          {loading ? 'Gönderiliyor…' : 'Giriş Yap'}
+        </button>
+      </form>
+    </main>
+  );
+}
