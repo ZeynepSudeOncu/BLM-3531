@@ -1,30 +1,72 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Auth.Application.Services;
+using Auth.Application.DTOs;
 using Auth.Domain.Entities;
 using Auth.Infrastructure.Logistics.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Infrastructure.Services;
 
 public class TruckService : ITruckService
 {
-    private readonly LogisticsDbContext _db;
+    private readonly LogisticsDbContext _context;
 
-    public TruckService(LogisticsDbContext db)
+    public TruckService(LogisticsDbContext context)
     {
-        _db = db;
+        _context = context;
     }
 
-    public async Task<IReadOnlyList<Truck>> GetAllTrucksAsync()
+    public async Task<List<Truck>> GetAllTrucksAsync()
     {
-        return await _db.Trucks.AsNoTracking().ToListAsync();
-        // IReadOnlyList<Truck> demo = new List<Truck>
-        // {
-        //     new Truck { Id = "K001", Plate = "06 ABC 123", Model = "Actros", Status = "Müsait", Capacity = 20 },
-        //     new Truck { Id = "K002", Plate = "06 XYZ 456", Model = "FH", Status = "Yolda", Capacity = 18 }
-        // };
-
-        // return await Task.FromResult(demo);
+        return await _context.Trucks
+            .Where(t => t.IsActive)
+            .ToListAsync();
     }
+
+
+    public async Task<Truck> CreateTruckAsync(CreateTruckDto dto)
+    {
+        var truck = new Truck
+        {
+            Plate = dto.Plate,
+            Model = dto.Model,
+            Capacity = dto.Capacity,
+            IsActive = true
+        };
+
+        _context.Trucks.Add(truck);
+        await _context.SaveChangesAsync();
+
+        return truck;
+    }
+
+    public async Task<bool> DeactivateTruckAsync(Guid id)
+    {
+        var truck = await _context.Trucks.FirstOrDefaultAsync(t => t.Id == id);
+
+        if (truck == null)
+            return false;
+
+        truck.IsActive = false;
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+
+    public async Task<bool> UpdateTruckAsync(Guid id, UpdateTruckDto dto)
+{
+    var truck = await _context.Trucks.FirstOrDefaultAsync(t => t.Id == id);
+
+    if (truck == null)
+        return false;
+
+    truck.Plate = dto.Plate;
+    truck.Model = dto.Model;
+    truck.Capacity = dto.Capacity;
+
+    await _context.SaveChangesAsync();
+    return true;
+}
+
+
 }

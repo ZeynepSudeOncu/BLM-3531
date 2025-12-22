@@ -20,32 +20,52 @@ interface Truck {
   plate: string;
   model: string;
   capacity: number;
-  status: string;
+  isActive: boolean;
 }
 
 export default function AdminKamyonListesi() {
   const [trucks, setTrucks] = useState<Truck[]>([]);
   const router = useRouter();
 
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token")
+      : null;
+
   useEffect(() => {
+    if (!token) return;
+
     axios
-      .get("http://localhost:5144/api/trucks")
+      .get("http://localhost:5144/api/Trucks", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       .then((res) => setTrucks(res.data))
       .catch((err) => console.error("Kamyonlar alınamadı", err));
-  }, []);
+  }, [token]);
 
   const handleAddTruck = () => {
     router.push("/dashboard/admin/kamyonlar/yeni" as unknown as Route);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const confirmed = confirm("Bu kamyonu silmek istediğinize emin misiniz?");
-    if (!confirmed) return;
+    if (!confirmed || !token) return;
 
-    axios
-      .delete(`http://localhost:5144/api/trucks/${id}`)
-      .then(() => setTrucks((prev) => prev.filter((k) => k.id !== id)))
-      .catch((err) => alert("Silme işlemi başarısız: " + err));
+    try {
+      await axios.delete(`http://localhost:5144/api/Trucks/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // frontend state güncelle
+      setTrucks((prev) => prev.filter((k) => k.id !== id));
+    } catch (err) {
+      alert("Silme işlemi başarısız");
+      console.error(err);
+    }
   };
 
   return (
@@ -58,40 +78,49 @@ export default function AdminKamyonListesi() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>ID</TableHead>
+            {/* <TableHead>ID</TableHead> */}
             <TableHead>Plaka</TableHead>
             <TableHead>Model</TableHead>
-            <TableHead>Kapasite (ton)</TableHead>
+            <TableHead>Kapasite</TableHead>
             <TableHead>Durum</TableHead>
             <TableHead>İşlemler</TableHead>
           </TableRow>
         </TableHeader>
+
         <TableBody>
           {trucks.map((kamyon) => (
             <TableRow key={kamyon.id}>
-              <TableCell>{kamyon.id}</TableCell>
+              {/* <TableCell>{kamyon.id}</TableCell> */}
               <TableCell>{kamyon.plate}</TableCell>
               <TableCell>{kamyon.model}</TableCell>
               <TableCell>{kamyon.capacity}</TableCell>
-              <TableCell>{kamyon.status}</TableCell>
+              <TableCell>
+                {kamyon.isActive ? "Aktif" : "Pasif"}
+              </TableCell>
               <TableCell>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     onClick={() =>
-                      router.push(`/dashboard/admin/kamyonlar/${kamyon.id}` as unknown as Route)
+                      router.push(
+                        `/dashboard/admin/kamyonlar/${kamyon.id}` as unknown as Route
+                      )
                     }
                   >
                     Detay
                   </Button>
+
                   <Button
                     variant="secondary"
                     onClick={() =>
-                      router.push(`/dashboard/admin/kamyonlar/duzenle/${kamyon.id}` as unknown as Route)
+                      router.push(
+                        `/dashboard/admin/kamyonlar/duzenle/${kamyon.id}` as unknown as Route
+                      )
                     }
                   >
                     Düzenle
                   </Button>
+
                   <Button
                     variant="destructive"
                     onClick={() => handleDelete(kamyon.id)}

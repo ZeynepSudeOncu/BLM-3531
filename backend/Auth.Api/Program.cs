@@ -10,8 +10,10 @@ using System.Security.Claims;
 using Auth.Infrastructure.Logistics.Context;
 using Microsoft.EntityFrameworkCore;
 using Auth.Infrastructure.Persistence; 
-using Auth.Infrastructure.Services; 
+using Auth.Infrastructure.Services;
 using Microsoft.OpenApi.Models;
+using Auth.Application.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -96,6 +98,7 @@ builder.Services.AddScoped<Auth.Application.Services.ITruckService, Auth.Infrast
 builder.Services.AddScoped<Auth.Application.Services.IOrderService, Auth.Infrastructure.Services.OrderService>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<Auth.Application.Abstractions.Services.IAuthService, Auth.Infrastructure.Services.Auth.AuthService>();
+builder.Services.AddScoped<ITruckService, TruckService>();
 
 
 

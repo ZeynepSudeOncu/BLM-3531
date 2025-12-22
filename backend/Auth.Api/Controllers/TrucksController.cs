@@ -1,10 +1,9 @@
 using Auth.Application.Services;
+using Auth.Application.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Auth.Infrastructure.Logistics.Context;
-using Auth.Domain.Entities;
 
 namespace Auth.Api.Controllers;
-
 
 [ApiController]
 [Route("api/[controller]")]
@@ -23,4 +22,38 @@ public class TrucksController : ControllerBase
         var trucks = await _truckService.GetAllTrucksAsync();
         return Ok(trucks);
     }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateTruckDto dto)
+    {
+        var created = await _truckService.CreateTruckAsync(dto);
+        return Ok(created);
+    }
+
+    // 🔴 BU YOKSA 404 ALIRSIN
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var result = await _truckService.DeactivateTruckAsync(id);
+
+        if (!result)
+            return NotFound();
+
+        return NoContent(); // 204
+    }
+
+    [HttpPut("{id:guid}")]
+[Authorize(Roles = "Admin")]
+public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTruckDto dto)
+{
+    var updated = await _truckService.UpdateTruckAsync(id, dto);
+
+    if (!updated)
+        return NotFound();
+
+    return NoContent(); // 204
+}
+
 }

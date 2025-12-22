@@ -3,6 +3,7 @@ using System;
 using Auth.Infrastructure.Logistics.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Auth.Infrastructure.Migrations.LogisticsDb
 {
     [DbContext(typeof(LogisticsDbContext))]
-    partial class LogisticsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251222143131_AddTruckIdToDrivers")]
+    partial class AddTruckIdToDrivers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -95,9 +98,6 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("AssignedTruckId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -113,6 +113,9 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("TruckId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
