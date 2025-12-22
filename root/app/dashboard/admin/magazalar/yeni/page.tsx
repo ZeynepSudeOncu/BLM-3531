@@ -8,19 +8,25 @@ import type { Route } from "next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+type Depot = {
+  id: string;
+  name: string;
+};
+
 export default function YeniMagazaEkle() {
   const router = useRouter();
 
+  // 🔹 Form alanları
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [isActive, setIsActive] = useState(true);
 
-  // 👇 YENİ: depo state’leri
-  const [depots, setDepots] = useState<any[]>([]);
+  // 🔹 Depo seçimi
+  const [depots, setDepots] = useState<Depot[]>([]);
   const [depotId, setDepotId] = useState("");
 
-  // 👇 Sayfa açılınca depoları çek
+  // 🔹 Sayfa açılınca depoları çek
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -31,15 +37,19 @@ export default function YeniMagazaEkle() {
         },
       })
       .then((res) => setDepots(res.data))
-      .catch((err) => console.error("Depolar alınamadı:", err));
+      .catch((err) => {
+        console.error("Depolar alınamadı:", err);
+        alert("Depolar yüklenemedi");
+      });
   }, []);
 
+  // 🔹 Form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 👇 ZORUNLU KONTROL
+    // Frontend zorunlu kontrol
     if (!depotId) {
-      alert("Lütfen bağlı olduğu depoyu seçin");
+      alert("Lütfen mağazanın bağlı olduğu depoyu seçin");
       return;
     }
 
@@ -53,7 +63,7 @@ export default function YeniMagazaEkle() {
           address,
           phone,
           isActive,
-          depotId, // 👈 EN KRİTİK SATIR
+          depotId, // 🔥 CONSTRAINT İLE UYUMLU
         },
         {
           headers: {
@@ -65,9 +75,16 @@ export default function YeniMagazaEkle() {
 
       alert("Mağaza başarıyla eklendi!");
       router.push("/dashboard/admin/magazalar" as Route);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Mağaza ekleme hatası:", err);
-      alert("Mağaza eklenemedi!");
+
+      if (err?.response?.status === 400) {
+        alert("Geçersiz depo seçimi");
+      } else if (err?.response?.status === 401) {
+        alert("Yetkisiz işlem");
+      } else {
+        alert("Mağaza eklenemedi");
+      }
     }
   };
 
@@ -76,6 +93,7 @@ export default function YeniMagazaEkle() {
       <h1 className="text-2xl font-bold mb-4">Yeni Mağaza Ekle</h1>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
+        {/* Mağaza adı */}
         <Input
           placeholder="Mağaza Adı"
           value={name}
@@ -83,6 +101,7 @@ export default function YeniMagazaEkle() {
           required
         />
 
+        {/* Adres */}
         <Input
           placeholder="Adres"
           value={address}
@@ -90,6 +109,7 @@ export default function YeniMagazaEkle() {
           required
         />
 
+        {/* Telefon */}
         <Input
           placeholder="Telefon"
           value={phone}
@@ -97,9 +117,9 @@ export default function YeniMagazaEkle() {
           required
         />
 
-        {/* 👇 BAĞLI DEPO SEÇİMİ */}
+        {/* 🔥 Bağlı Depo */}
         <div>
-          <label className="font-medium">Bağlı Depo</label>
+          <label className="font-medium block mb-1">Bağlı Depo</label>
           <select
             value={depotId}
             onChange={(e) => setDepotId(e.target.value)}
@@ -115,14 +135,18 @@ export default function YeniMagazaEkle() {
           </select>
         </div>
 
-        <select
-          value={isActive ? "1" : "0"}
-          onChange={(e) => setIsActive(e.target.value === "1")}
-          className="border p-2 rounded w-full"
-        >
-          <option value="1">Aktif</option>
-          <option value="0">Pasif</option>
-        </select>
+        {/* Aktif / Pasif */}
+        <div>
+          <label className="font-medium block mb-1">Durum</label>
+          <select
+            value={isActive ? "1" : "0"}
+            onChange={(e) => setIsActive(e.target.value === "1")}
+            className="border p-2 rounded w-full"
+          >
+            <option value="1">Aktif</option>
+            <option value="0">Pasif</option>
+          </select>
+        </div>
 
         <Button type="submit">Kaydet</Button>
       </form>
