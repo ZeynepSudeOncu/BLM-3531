@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Auth.Infrastructure.Persistence.Migrations.Logistics
+namespace Auth.Infrastructure.Migrations.LogisticsDb
 {
     [DbContext(typeof(LogisticsDbContext))]
     partial class LogisticsDbContextModelSnapshot : ModelSnapshot
@@ -33,6 +33,9 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW()");
 
+                    b.Property<string>("DepotId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -48,6 +51,9 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("StoreId")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -58,13 +64,13 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
 
             modelBuilder.Entity("Auth.Domain.Entities.Depot", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(10)");
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("integer");
@@ -115,12 +121,9 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
 
             modelBuilder.Entity("Auth.Domain.Entities.Order", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
@@ -130,6 +133,7 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
                         .HasColumnType("text");
 
                     b.Property<string>("DriverId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Status")
@@ -141,11 +145,44 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
                         .HasColumnType("text");
 
                     b.Property<string>("TruckId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("Auth.Domain.Entities.Product", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DepotId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("MinStock")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SKU")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("Auth.Domain.Entities.RefreshToken", b =>
@@ -210,8 +247,9 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
 
             modelBuilder.Entity("Auth.Domain.Entities.Truck", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("integer");

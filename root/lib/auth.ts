@@ -1,42 +1,75 @@
-import { api } from './http';
+import { api } from "./http";
 
-export type Role = 'Admin' | 'Depot' | 'Store' | 'Driver';
+export type Role = "Admin" | "Depot" | "Store" | "Driver";
 
 export interface UserProfile {
-  id: string;
   email: string;
   roles: Role[];
 }
 
-export async function login({ email, password }: { email: string; password: string }): Promise<string> {
-  const res = await api.post('/auth/login', { email, password });
-  const token: string = res.data?.token ?? res.data?.accessToken;
-  if (!token) throw new Error('Token alınamadı');
+/* =========================
+   LOGIN
+========================= */
+export async function login({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}): Promise<string> {
+  const res = await api.post("/auth/login", { email, password });
+
+  const token: string | undefined =
+    res.data?.token ?? res.data?.accessToken;
+
+  if (!token) {
+    throw new Error("Token alınamadı");
+  }
+
+  localStorage.setItem("token", token);
   return token;
 }
 
+/* =========================
+   PROFILE
+========================= */
 export async function getProfile(): Promise<UserProfile> {
-  const token = localStorage.getItem('token');
-  if (!token) throw new Error('Token bulunamadı');
+  const token = localStorage.getItem("token");
 
-  const res = await api.get('/auth/profile', {
+  if (!token) {
+    throw new Error("Token bulunamadı");
+  }
+
+  const res = await api.get("/auth/profile", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
-  return res.data ;//as UserProfile;
+
+  return res.data as UserProfile;
 }
 
-
+/* =========================
+   ROLE → ROUTE MAP
+========================= */
 export const roleRoutes: Record<Role, string> = {
-  Admin: '/dashboard/admin',
-  Depot: '/dashboard/depot',
-  Store: '/dashboard/store',
-  Driver: '/dashboard/driver',
+  Admin: "/dashboard/admin",
+  Depot: "/dashboard/depot",
+  Store: "/dashboard/store",
+  Driver: "/dashboard/driver",
 };
 
-export function redirectForRole(role: string): string {
-  const lower = role.toLowerCase();
-  return `/dashboard/${lower}`;
+/* =========================
+   REDIRECT HELPER
+========================= */
+export function redirectForProfile(profile: UserProfile): string {
+  const role = profile.roles[0]; // şu an tek rol varsayımı
+  return roleRoutes[role] ?? "/login";
 }
 
+/* =========================
+   LOGOUT
+========================= */
+export function logout() {
+  localStorage.removeItem("token");
+}

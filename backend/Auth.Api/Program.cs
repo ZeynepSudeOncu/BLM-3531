@@ -134,7 +134,7 @@ authGroup.MapPost("/register",
     .WithOpenApi();
 
 
-authGroup.MapPost("/login",
+    authGroup.MapPost("/login",
     async Task<IResult> ([FromBody] LoginRequest req,
                          Auth.Application.Abstractions.Services.IAuthService auth,
                          CancellationToken ct) =>

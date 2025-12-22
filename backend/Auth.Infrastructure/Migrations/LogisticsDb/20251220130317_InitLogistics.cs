@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Auth.Infrastructure.Persistence.Migrations.Logistics
+namespace Auth.Infrastructure.Migrations.LogisticsDb
 {
     /// <inheritdoc />
-    public partial class InitLogisticsDb : Migration
+    public partial class InitLogistics : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -46,18 +46,34 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
                 name: "Orders",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    CustomerName = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     StoreId = table.Column<string>(type: "text", nullable: false),
                     DepotId = table.Column<string>(type: "text", nullable: false),
-                    TruckId = table.Column<string>(type: "text", nullable: true),
-                    DriverId = table.Column<string>(type: "text", nullable: true),
+                    TruckId = table.Column<string>(type: "text", nullable: false),
+                    DriverId = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<string>(type: "text", nullable: false),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Orders", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    SKU = table.Column<string>(type: "text", nullable: false),
+                    Category = table.Column<string>(type: "text", nullable: false),
+                    Stock = table.Column<int>(type: "integer", nullable: false),
+                    MinStock = table.Column<int>(type: "integer", nullable: false),
+                    DepotId = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -79,7 +95,7 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
                 name: "Trucks",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Plate = table.Column<string>(type: "text", nullable: false),
                     Model = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<string>(type: "text", nullable: false),
@@ -98,7 +114,9 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
                     Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     PasswordHash = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Role = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    DepotId = table.Column<string>(type: "text", nullable: true),
+                    StoreId = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -156,6 +174,9 @@ namespace Auth.Infrastructure.Persistence.Migrations.Logistics
 
             migrationBuilder.DropTable(
                 name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "refresh_tokens");

@@ -28,7 +28,7 @@ public class DepotsController : ControllerBase
     {
         var depot = new Depot
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             Name = req.Name,
             Address = req.Address,
             Capacity = req.Capacity,
@@ -42,24 +42,24 @@ public class DepotsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateDepotRequest req)
-    {
-        var depot = await _context.Depots.FindAsync(id);
-        if (depot == null)
-            return NotFound(new { error = "Depot not found" });
+public async Task<IActionResult> Update(Guid id, [FromBody] UpdateDepotRequest req)
+{
+    var depot = await _context.Depots.FindAsync(id);
+    if (depot == null)
+        return NotFound(new { error = "Depot not found" });
 
-        depot.Name = req.Name;
-        depot.Address = req.Address;
-        depot.Capacity = req.Capacity;
-        depot.IsActive = req.IsActive;
+    depot.Name = req.Name;
+    depot.Address = req.Address;
+    depot.Capacity = req.Capacity;
+    depot.IsActive = req.IsActive;
 
-        await _context.SaveChangesAsync();
+    await _context.SaveChangesAsync();
+    return Ok(depot);
+}
 
-        return Ok(depot);
-    }
 
 [HttpDelete("{id}")]
-public async Task<IActionResult> Delete(string id)
+public async Task<IActionResult> Delete(Guid id)
 {
     var depot = await _context.Depots.FindAsync(id);
     if (depot == null)
@@ -69,6 +69,7 @@ public async Task<IActionResult> Delete(string id)
     await _context.SaveChangesAsync();
     return NoContent();
 }
+
 
 
 

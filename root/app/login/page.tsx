@@ -1,14 +1,13 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { login, getProfile, redirectForRole } from '@/lib/auth';
+import { login, getProfile, redirectForProfile } from '@/lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const sp = useSearchParams();
 
-  const [email, setEmail] = useState('admin@example.com');
+  const [email, setEmail] = useState('admin@local');
   const [password, setPassword] = useState('Pass123!');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -17,16 +16,16 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setErr(null);
+
     try {
-      const token = await login({ email, password });
-      localStorage.setItem('token', token); 
+      await login({ email, password });
 
-      const me = await getProfile();
-const role = (me.roles?.[0] ?? 'Admin') as any;
-router.push(redirectForRole(role) as any);
+      const profile = await getProfile();
+      const redirectPath = redirectForProfile(profile);
 
+      router.push(redirectPath as any);
     } catch (e: any) {
-      setErr(e?.response?.data?.message || e?.message || 'Giriş başarısız');
+      setErr(e?.response?.data?.error || e?.message || 'Giriş başarısız');
     } finally {
       setLoading(false);
     }
@@ -34,7 +33,10 @@ router.push(redirectForRole(role) as any);
 
   return (
     <main className="grid place-items-center min-h-[60vh] p-6">
-      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4 bg-white p-6 rounded-2xl shadow">
+      <form
+        onSubmit={onSubmit}
+        className="w-full max-w-sm space-y-4 bg-white p-6 rounded-2xl shadow"
+      >
         <h2 className="text-2xl font-semibold text-center">Giriş</h2>
 
         <div className="space-y-2">
