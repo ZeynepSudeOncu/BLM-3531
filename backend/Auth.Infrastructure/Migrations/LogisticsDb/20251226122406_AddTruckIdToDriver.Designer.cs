@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Auth.Infrastructure.Migrations.LogisticsDb
 {
     [DbContext(typeof(LogisticsDbContext))]
-    [Migration("20251222145136_AddAssignedTruckIdToDriver")]
-    partial class AddAssignedTruckIdToDriver
+    [Migration("20251226122406_AddTruckIdToDriver")]
+    partial class AddTruckIdToDriver
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,80 +25,35 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Auth.Domain.Entities.AppUser", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("DepotId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("StoreId")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.ToTable("users", (string)null);
-                });
-
             modelBuilder.Entity("Auth.Domain.Entities.Depot", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Depots", (string)null);
+                    b.ToTable("Depots");
                 });
 
             modelBuilder.Entity("Auth.Domain.Entities.Driver", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("AssignedTruckId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("FullName")
@@ -117,9 +72,21 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("TruckId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TruckId1")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Drivers", (string)null);
+                    b.HasIndex("TruckId")
+                        .IsUnique();
+
+                    b.HasIndex("TruckId1")
+                        .IsUnique();
+
+                    b.ToTable("Drivers");
                 });
 
             modelBuilder.Entity("Auth.Domain.Entities.Order", b =>
@@ -188,41 +155,6 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("Auth.Domain.Entities.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Token")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("refresh_tokens", (string)null);
-                });
-
             modelBuilder.Entity("Auth.Domain.Entities.Store", b =>
                 {
                     b.Property<string>("Id")
@@ -276,13 +208,23 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                     b.ToTable("Trucks");
                 });
 
-            modelBuilder.Entity("Auth.Domain.Entities.RefreshToken", b =>
+            modelBuilder.Entity("Auth.Domain.Entities.Driver", b =>
                 {
-                    b.HasOne("Auth.Domain.Entities.AppUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("Auth.Domain.Entities.Truck", "Truck")
+                        .WithOne()
+                        .HasForeignKey("Auth.Domain.Entities.Driver", "TruckId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Auth.Domain.Entities.Truck", null)
+                        .WithOne("Driver")
+                        .HasForeignKey("Auth.Domain.Entities.Driver", "TruckId1");
+
+                    b.Navigation("Truck");
+                });
+
+            modelBuilder.Entity("Auth.Domain.Entities.Truck", b =>
+                {
+                    b.Navigation("Driver");
                 });
 #pragma warning restore 612, 618
         }

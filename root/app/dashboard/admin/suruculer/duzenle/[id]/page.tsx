@@ -1,93 +1,69 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
-import type { Route } from "next";
 
-type Truck = {
-  id: string;
-  plate: string;
-};
-
-type Driver = {
-  id: string;
-  truckId?: string | null;
-};
-
-export default function SurucuKamyonAta() {
-  const params = useParams();
-  const driverId = params?.id as string;
+export default function SurucuDuzenlePage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const token = localStorage.getItem("token");
 
-  const [trucks, setTrucks] = useState<Truck[]>([]);
-  const [truckId, setTruckId] = useState<string>("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [license, setLicense] = useState("");
+  const [status, setStatus] = useState("Müsait");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    if (!token) return;
 
-    Promise.all([
-      axios.get(`http://localhost:5144/api/drivers/${driverId}`, {
+    axios
+      .get(`http://localhost:5144/api/drivers/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
-      }),
-      axios.get("http://localhost:5144/api/trucks", {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-    ])
-      .then(([driverRes, trucksRes]) => {
-        const driver: Driver = driverRes.data;
-        setTruckId(driver.truckId ?? "");
-        setTrucks(trucksRes.data);
       })
-      .catch((err) => {
-        console.error("Veriler alınamadı:", err);
-      });
-  }, [driverId]);
+      .then((res) => {
+        const d = res.data;
+        setFullName(d.fullName);
+        setPhone(d.phone);
+        setLicense(d.license);
+        setStatus(d.status);
+      })
+      .finally(() => setLoading(false));
+  }, [id, token]);
 
-  const handleAssign = async () => {
-    const token = localStorage.getItem("token");
+  const handleSave = async () => {
+    if (!token) return;
 
-    try {
-      await axios.put(
-        `http://localhost:5144/api/drivers/${driverId}/assign-truck`,
-        {
-          truckId: truckId || null,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    await axios.put(
+      `http://localhost:5144/api/drivers/${id}`,
+      { fullName, phone, license, status },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      alert("Kamyon ataması güncellendi");
-      router.push("/dashboard/admin/suruculer" as Route);
-    } catch (err) {
-      console.error("Kamyon atama hatası:", err);
-      alert("İşlem başarısız");
-    }
+    router.push("/dashboard/admin/suruculer");
   };
 
+  if (loading) return <div className="p-6">Yükleniyor...</div>;
+
   return (
-    <div className="p-6 space-y-4 max-w-md mx-auto">
-      <h1 className="text-xl font-bold">Sürücüye Kamyon Ata</h1>
+    <div className="p-6 max-w-xl space-y-4">
+      <h1 className="text-xl font-bold">Sürücü Düzenle</h1>
 
-      <div>
-        <label className="font-medium">Atanacak Kamyon</label>
-        <select
-          value={truckId}
-          onChange={(e) => setTruckId(e.target.value)}
-          className="border p-2 w-full rounded"
-        >
-          <option value="">Kamyonu kaldır</option>
-          {trucks.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.plate}
-            </option>
-          ))}
-        </select>
-      </div>
+      <input className="border p-2 w-full" value={fullName} onChange={e => setFullName(e.target.value)} />
+      <input className="border p-2 w-full" value={phone} onChange={e => setPhone(e.target.value)} />
+      <input className="border p-2 w-full" value={license} onChange={e => setLicense(e.target.value)} />
+      <select
+            className="border p-2 w-full"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
+            <option value="Müsait">Müsait</option>
+            <option value="Yolda">Yolda</option>
+      </select>
 
-      <Button onClick={handleAssign}>Kaydet</Button>
+      <Button onClick={handleSave}>Kaydet</Button>
     </div>
   );
 }

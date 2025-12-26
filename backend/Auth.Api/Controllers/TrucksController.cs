@@ -16,6 +16,7 @@ public class TrucksController : ControllerBase
         _truckService = truckService;
     }
 
+    // ✅ Artık isAssigned bilgisi de gelir
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -31,7 +32,6 @@ public class TrucksController : ControllerBase
         return Ok(created);
     }
 
-    // 🔴 BU YOKSA 404 ALIRSIN
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)
@@ -41,19 +41,18 @@ public class TrucksController : ControllerBase
         if (!result)
             return NotFound();
 
-        return NoContent(); // 204
+        return NoContent();
     }
 
     [HttpPut("{id:guid}")]
-[Authorize(Roles = "Admin")]
-public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTruckDto dto)
-{
-    var updated = await _truckService.UpdateTruckAsync(id, dto);
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTruckDto dto)
+    {
+        var updated = await _truckService.UpdateTruckAsync(id, dto);
 
-    if (!updated)
-        return NotFound();
+        if (!updated)
+            return NotFound();
 
-    return NoContent(); // 204
-}
-
+        return NoContent();
+    }
 }

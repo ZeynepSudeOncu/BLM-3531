@@ -24,9 +24,17 @@ public class DriverConfiguration : IEntityTypeConfiguration<Driver>
         builder.Property(x => x.Status)
             .IsRequired();
 
-        // 🔥 DÜZELTİLEN SATIR
-        builder.Property(x => x.AssignedTruckId)
+        builder.Property(x => x.TruckId)
             .HasColumnType("uuid")
             .IsRequired(false);
+
+        builder
+            .HasOne(x => x.Truck)
+            .WithMany()                 // 🔥 DEĞİŞEN SATIR
+            .HasForeignKey(x => x.TruckId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(x => x.TruckId)
+            .IsUnique(); // 1 kamyon = 1 sürücü
     }
 }

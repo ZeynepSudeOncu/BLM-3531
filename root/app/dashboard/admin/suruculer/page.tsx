@@ -13,6 +13,7 @@ type Driver = {
   license: string;
   status: string;
   truckId?: string | null;
+  truckPlate?: string | null;
 };
 
 type Truck = {
@@ -27,6 +28,10 @@ export default function SuruculerPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     Promise.all([
       axios.get("http://localhost:5144/api/drivers", {
@@ -39,18 +44,29 @@ export default function SuruculerPage() {
       .then(([driversRes, trucksRes]) => {
         setDrivers(driversRes.data);
         setTrucks(trucksRes.data);
-        setLoading(false);
       })
       .catch((err) => {
         console.error("Sürücüler alınamadı:", err);
-        setLoading(false);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const getTruckPlate = (truckId?: string | null) => {
-    if (!truckId) return "—";
-    const truck = trucks.find((t) => t.id === truckId);
-    return truck ? truck.plate : "—";
+  const handleDelete = async (id: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const ok = confirm("Bu sürücüyü silmek istediğinize emin misiniz?");
+    if (!ok) return;
+
+    try {
+      await axios.delete(`http://localhost:5144/api/drivers/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDrivers((prev) => prev.filter((d) => d.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert("Silme işlemi başarısız.");
+    }
   };
 
   if (loading) {
@@ -59,7 +75,13 @@ export default function SuruculerPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Sürücüler</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Sürücüler</h1>
+
+        <Link href={"/dashboard/admin/suruculer/yeni" as Route}>
+          <Button>+ Yeni Sürücü</Button>
+        </Link>
+      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full border text-sm">
@@ -73,36 +95,58 @@ export default function SuruculerPage() {
               <th className="border p-2 text-center">İşlem</th>
             </tr>
           </thead>
+
           <tbody>
             {drivers.map((d) => (
               <tr key={d.id}>
                 <td className="border p-2">{d.fullName}</td>
                 <td className="border p-2">{d.phone}</td>
                 <td className="border p-2">{d.license}</td>
+                <td className="border p-2">{d.status}</td>
                 <td className="border p-2">
-                  {d.status === "Active" ? "Aktif" : "Pasif"}
-                </td>
-                <td className="border p-2">
-                  {getTruckPlate(d.truckId)}
-                </td>
+  {d.truckPlate ? (
+    <div className="flex items-center gap-2">
+      <span>{d.truckPlate}</span>
+
+      {/* 🔒 Kamyon atanmış badge */}
+      <span className="text-xs text-green-600 font-medium">
+        (atanmış)
+      </span>
+    </div>
+  ) : (
+    <span className="text-gray-500">Atanmamış</span>
+  )}
+</td>
+
                 <td className="border p-2 text-center">
-                  <Link
-                    href={`/dashboard/admin/suruculer/duzenle/${d.id}` as Route}
-                  >
-                    <Button size="sm" variant="outline">
-                      Kamyon Ata
+                  <div className="flex items-center justify-center gap-2">
+                  <td className="border p-2 text-center">
+  <div className="flex gap-2 justify-center">
+
+    <Link href={`/dashboard/admin/suruculer/duzenle/${d.id}`}>
+      <Button size="sm" variant="secondary">Düzenle</Button>
+    </Link>
+
+    {!d.truckId && (
+      <Link href={`/dashboard/admin/suruculer/kamyon-ata/${d.id}` as Route}>
+        <Button size="sm" variant="outline">Kamyon Ata</Button>
+      </Link>
+    )}
+
+  </div>
+</td>
+
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(d.id)}>
+                      Sil
                     </Button>
-                  </Link>
+                  </div>
                 </td>
               </tr>
             ))}
 
             {drivers.length === 0 && (
               <tr>
-                <td
-                  colSpan={6}
-                  className="border p-4 text-center text-gray-500"
-                >
+                <td colSpan={6} className="border p-4 text-center text-gray-500">
                   Kayıtlı sürücü yok
                 </td>
               </tr>

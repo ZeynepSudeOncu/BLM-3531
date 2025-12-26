@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Auth.Infrastructure.Migrations.LogisticsDb
 {
     [DbContext(typeof(LogisticsDbContext))]
-    [Migration("20251222143131_AddTruckIdToDrivers")]
-    partial class AddTruckIdToDrivers
+    [Migration("20251225212808_ForceCreateDriversTable")]
+    partial class ForceCreateDriversTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -95,8 +95,9 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
 
             modelBuilder.Entity("Auth.Domain.Entities.Driver", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -118,6 +119,9 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TruckId")
+                        .IsUnique();
 
                     b.ToTable("Drivers", (string)null);
                 });
@@ -273,7 +277,17 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
 
                     b.HasKey("Id");
 
-                    b.ToTable("Trucks");
+                    b.ToTable("Trucks", (string)null);
+                });
+
+            modelBuilder.Entity("Auth.Domain.Entities.Driver", b =>
+                {
+                    b.HasOne("Auth.Domain.Entities.Truck", "Truck")
+                        .WithOne("Driver")
+                        .HasForeignKey("Auth.Domain.Entities.Driver", "TruckId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Truck");
                 });
 
             modelBuilder.Entity("Auth.Domain.Entities.RefreshToken", b =>
@@ -283,6 +297,11 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Auth.Domain.Entities.Truck", b =>
+                {
+                    b.Navigation("Driver");
                 });
 #pragma warning restore 612, 618
         }

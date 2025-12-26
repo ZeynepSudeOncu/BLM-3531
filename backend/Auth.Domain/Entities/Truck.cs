@@ -9,5 +9,6 @@ public class Truck
     public int Capacity { get; set; }
 
     public bool IsActive { get; set; } = true;
+
 }
 

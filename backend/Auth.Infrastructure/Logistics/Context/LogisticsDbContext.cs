@@ -15,13 +15,31 @@ public class LogisticsDbContext : DbContext
     public DbSet<Depot> Depots { get; set; }
     public DbSet<Store> Stores { get; set; }
     public DbSet<Truck> Trucks { get; set; }
-    public DbSet<Driver> Drivers => Set<Driver>();
-    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<Driver> Drivers { get; set; }   // 🔥 DÜZELTİLDİ
+    public DbSet<Order> Orders { get; set; }     // 🔥 DÜZELTİLDİ
+    public DbSet<Product> Products { get; set; }
 
-
- public DbSet<Product> Products { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(LogisticsDbContext).Assembly);
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Driver>(e =>
+        {
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.FullName).IsRequired();
+            e.Property(x => x.Phone).IsRequired();
+            e.Property(x => x.License).IsRequired();
+            e.Property(x => x.Status).IsRequired();
+
+            // 1-1: TruckId unique (TruckId null olabilir)
+            e.HasIndex(x => x.TruckId)
+             .IsUnique();
+
+            e.HasOne(x => x.Truck)
+             .WithOne()
+             .HasForeignKey<Driver>(x => x.TruckId)
+             .OnDelete(DeleteBehavior.SetNull);
+        });
     }
 }

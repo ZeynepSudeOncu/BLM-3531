@@ -1,14 +1,12 @@
 using Auth.Application.DTOs;
-using Auth.Domain.Entities;
 
 namespace Auth.Application.Services;
 
 public interface ITruckService
 {
-    Task<List<Truck>> GetAllTrucksAsync();
-    Task<Truck> CreateTruckAsync(CreateTruckDto dto);
-    Task<bool> DeactivateTruckAsync(Guid id);
+    Task<List<TruckListResponse>> GetAllTrucksAsync();
+
+    Task<CreateTruckDto> CreateTruckAsync(CreateTruckDto dto);
     Task<bool> UpdateTruckAsync(Guid id, UpdateTruckDto dto);
-
-
+    Task<bool> DeactivateTruckAsync(Guid id);
 }

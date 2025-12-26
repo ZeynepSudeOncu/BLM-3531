@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Auth.Infrastructure.Migrations.LogisticsDb
 {
     [DbContext(typeof(LogisticsDbContext))]
-    [Migration("20251222125229_AddDepotIdToStores")]
-    partial class AddDepotIdToStores
+    [Migration("20251225080602_BaselineLogistics")]
+    partial class BaselineLogistics
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -95,11 +95,9 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
 
             modelBuilder.Entity("Auth.Domain.Entities.Driver", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AssignedTruckId")
-                        .HasColumnType("text");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -117,9 +115,15 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("TruckId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Drivers");
+                    b.HasIndex("TruckId")
+                        .IsUnique();
+
+                    b.ToTable("Drivers", (string)null);
                 });
 
             modelBuilder.Entity("Auth.Domain.Entities.Order", b =>
@@ -260,6 +264,9 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                     b.Property<int>("Capacity")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Model")
                         .IsRequired()
                         .HasColumnType("text");
@@ -268,13 +275,19 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
-                    b.ToTable("Trucks");
+                    b.ToTable("Trucks", (string)null);
+                });
+
+            modelBuilder.Entity("Auth.Domain.Entities.Driver", b =>
+                {
+                    b.HasOne("Auth.Domain.Entities.Truck", "Truck")
+                        .WithOne("Driver")
+                        .HasForeignKey("Auth.Domain.Entities.Driver", "TruckId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Truck");
                 });
 
             modelBuilder.Entity("Auth.Domain.Entities.RefreshToken", b =>
@@ -284,6 +297,11 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Auth.Domain.Entities.Truck", b =>
+                {
+                    b.Navigation("Driver");
                 });
 #pragma warning restore 612, 618
         }
