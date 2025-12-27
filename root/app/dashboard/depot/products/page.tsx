@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/http";
 import { useRouter } from "next/navigation";
 
-interface Product {
-  id: string;
+interface DepotProduct {
+  id: string;        // DepotProducts.Id
+  productId: string; // Products.Id
   name: string;
   code: string;
   quantity: number;
@@ -14,7 +15,7 @@ interface Product {
 export default function DepotProductsPage() {
   const router = useRouter();
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<DepotProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +28,7 @@ export default function DepotProductsPage() {
     }
 
     api
-      .get("/products/my")
+      .get("/depot-products/my") // 🔥 DEĞİŞTİ
       .then(res => {
         setProducts(res.data);
       })
@@ -36,7 +37,7 @@ export default function DepotProductsPage() {
           localStorage.removeItem("token");
           router.push("/login");
         } else {
-          setError("Ürünler alınamadı");
+          setError("Depo ürünleri alınamadı");
         }
       })
       .finally(() => {
@@ -47,7 +48,7 @@ export default function DepotProductsPage() {
   if (loading) return <p>Yükleniyor...</p>;
   if (error) return <p className="text-red-600">{error}</p>;
 
-  // ✅ TOPLAM STOK HESABI
+  // ✅ TOPLAM STOK (artık doğru yerden)
   const totalQuantity = products.reduce(
     (sum, p) => sum + p.quantity,
     0
@@ -57,7 +58,7 @@ export default function DepotProductsPage() {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Depo Ürünleri</h2>
 
-      {/* ÖZET KARTLAR */}
+      {/* ÖZET */}
       <div className="flex gap-4">
         <div className="bg-gray-100 rounded-lg p-4 w-64">
           <p className="text-sm text-gray-500">Toplam Stok</p>
@@ -70,7 +71,7 @@ export default function DepotProductsPage() {
         </div>
       </div>
 
-      {/* ÜRÜN TABLOSU */}
+      {/* TABLO */}
       <table className="w-full border border-gray-200 bg-white">
         <thead className="bg-gray-100">
           <tr>

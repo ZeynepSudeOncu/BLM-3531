@@ -26,7 +26,7 @@ public class StoresController : ControllerBase
 
     // GET: api/stores/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetStoreById(string id)
+    public async Task<IActionResult> GetStoreById(Guid id)
     {
         var store = await _context.Stores.FirstOrDefaultAsync(x => x.Id == id);
 
@@ -57,7 +57,7 @@ public class StoresController : ControllerBase
 
         var store = new Store
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             Name = request.Name,
             Address = request.Address,
             Phone = request.Phone,
@@ -73,7 +73,7 @@ public class StoresController : ControllerBase
 
     // PUT: api/stores/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateStore(string id, [FromBody] UpdateStoreRequest request)
+    public async Task<IActionResult> UpdateStore(Guid id, [FromBody] UpdateStoreRequest request)
     {
         var store = await _context.Stores.FirstOrDefaultAsync(x => x.Id == id);
 
@@ -97,7 +97,7 @@ public class StoresController : ControllerBase
 
     // DELETE: api/stores/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteStore(string id)
+    public async Task<IActionResult> DeleteStore(Guid id)
     {
         var store = await _context.Stores.FirstOrDefaultAsync(x => x.Id == id);
 

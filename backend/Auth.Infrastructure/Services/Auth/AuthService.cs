@@ -28,7 +28,7 @@ public class AuthService(
         await users.AddAsync(user, ct);
         await uow.SaveChangesAsync(ct);
 
-        var token = jwt.CreateToken(user.Id, user.Email, user.Role, user.DepotId);
+        var token = jwt.CreateToken(user.Id, user.Email, user.Role, user.DepotId, user.StoreId);
         return (true, token, null);
     }
 
@@ -41,7 +41,12 @@ public class AuthService(
             return (false, null, "Invalid credentials.");
 
         // Depot kullanıcısı ise DepotId claim'i ekleyerek token üret
-        var token = jwt.CreateToken(user.Id, user.Email, user.Role, user.DepotId);
+        var token = jwt.CreateToken(
+            user.Id,
+            user.Email,
+            user.Role,
+            user.DepotId,
+            user.StoreId);
         return (true, token, null);
     }
 }

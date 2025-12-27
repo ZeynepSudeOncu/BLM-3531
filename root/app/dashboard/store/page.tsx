@@ -1,33 +1,16 @@
-'use client';
-
-import { AuthGuard, RoleGuard } from '@/lib/guards';
-import { logout } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
+// app/dashboard/store/page.tsx
+import StatCard from "../../../components/StatCard";
 
 export default function StoreDashboard() {
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/login');
-  };
-
   return (
-    <AuthGuard>
-      <RoleGuard allowed={['Store']}>
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Mağaza Dashboard</h1>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-            >
-              Çıkış Yap
-            </button>
-          </div>
-          <p>Mağaza paneline hoş geldiniz!</p>
-        </div>
-      </RoleGuard>
-    </AuthGuard>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold">Mağaza Dashboard</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard title="Toplam Ürün" value="24" />
+        <StatCard title="Düşük Stok" value="3" />
+        <StatCard title="Stokta Yok" value="1" />
+      </div>
+    </div>
   );
 }

@@ -1,3 +1,5 @@
+using Auth.Domain.Entities;
+
 namespace Auth.Domain.Entities;
 
 public class Depot
@@ -11,4 +13,6 @@ public class Depot
     public int Capacity { get; set; }
 
     public bool IsActive { get; set; } = true;
+    public ICollection<DepotProduct> DepotProducts { get; set; } = new List<DepotProduct>();
+
 }

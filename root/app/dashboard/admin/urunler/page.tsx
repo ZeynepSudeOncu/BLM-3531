@@ -24,35 +24,48 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<GroupedProduct[]>([]);
   const [openCode, setOpenCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get("/admin/depots/products").then(res => {
-      const raw: RawProduct[] = res.data;
-      const grouped: Record<string, GroupedProduct> = {};
+    api
+      .get("/admin/depots/products")
+      .then(res => {
+        const raw: RawProduct[] = res.data;
 
-      raw.forEach(item => {
-        if (!grouped[item.productCode]) {
-          grouped[item.productCode] = {
-            productCode: item.productCode,
-            productName: item.productName,
-            totalQuantity: 0,
-            details: []
-          };
-        }
+        const grouped = raw.reduce<Record<string, GroupedProduct>>(
+          (acc, item) => {
+            if (!acc[item.productCode]) {
+              acc[item.productCode] = {
+                productCode: item.productCode,
+                productName: item.productName,
+                totalQuantity: 0,
+                details: []
+              };
+            }
 
-        grouped[item.productCode].totalQuantity += item.quantity;
-        grouped[item.productCode].details.push({
-          depotName: item.depotName,
-          quantity: item.quantity
-        });
+            acc[item.productCode].totalQuantity += item.quantity;
+            acc[item.productCode].details.push({
+              depotName: item.depotName,
+              quantity: item.quantity
+            });
+
+            return acc;
+          },
+          {}
+        );
+
+        setProducts(Object.values(grouped));
+      })
+      .catch(() => {
+        setError("Ürünler alınamadı");
+      })
+      .finally(() => {
+        setLoading(false);
       });
-
-      setProducts(Object.values(grouped));
-      setLoading(false);
-    });
   }, []);
 
   if (loading) return <div className="p-6">Yükleniyor...</div>;
+  if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
     <div className="p-6">
@@ -72,8 +85,8 @@ export default function AdminProductsPage() {
 
         <tbody>
           {products.map(product => (
-            <>
-              <tr key={product.productCode} className="border-t">
+            <tbody key={product.productCode}>
+              <tr className="border-t">
                 <td className="px-4 py-3 font-medium">
                   {product.productCode}
                 </td>
@@ -115,7 +128,7 @@ export default function AdminProductsPage() {
                   </td>
                 </tr>
               )}
-            </>
+            </tbody>
           ))}
         </tbody>
       </table>
