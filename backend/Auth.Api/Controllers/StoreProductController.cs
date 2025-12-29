@@ -24,7 +24,7 @@ public class StoreProductController : ControllerBase
     public async Task<IActionResult> GetMyStoreProduct()
     {
         var storeIdStr =
-            User.FindFirstValue("storeId") ??
+            // User.FindFirstValue("storeId") ??
             User.FindFirstValue("StoreId");
 
         if (string.IsNullOrEmpty(storeIdStr))

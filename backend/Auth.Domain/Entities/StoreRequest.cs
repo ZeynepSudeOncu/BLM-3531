@@ -1,6 +1,4 @@
-using System;
-
-namespace Auth.Domain.Entities;
+using Auth.Domain.Entities;
 
 public class StoreRequest
 {
@@ -10,9 +8,15 @@ public class StoreRequest
     public Guid DepotId { get; set; }
     public Guid ProductId { get; set; }
 
-    public int RequestedQuantity { get; set; }
+    public Guid? TruckId { get; set; }
+    public Truck? Truck { get; set; }
 
-    public string Status { get; set; } = "Pending"; // Pending / Approved / Rejected
+    public int RequestedQuantity { get; set; }
+    public string Status { get; set; } = "Pending";
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? PickedUpAt { get; set; }
+    public DateTime? DeliveredAt { get; set; }
+
+    public Guid? ApprovedByDepotUserId { get; set; }
 }

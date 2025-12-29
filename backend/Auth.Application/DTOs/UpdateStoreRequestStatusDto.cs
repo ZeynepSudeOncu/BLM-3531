@@ -1,4 +1,4 @@
-namespace Auth.Application.DTOs.StoreRequests;
+namespace Auth.Application.DTOs.StoreRequest;
 
 public class UpdateStoreRequestStatusDto
 {

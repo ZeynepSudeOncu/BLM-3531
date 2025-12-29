@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Auth.Infrastructure.Migrations.LogisticsDb
 {
     [DbContext(typeof(LogisticsDbContext))]
-    [Migration("20251228112039_CreateStoreRequests")]
-    partial class CreateStoreRequests
+    [Migration("20251228112039_CreateStoreRequest")]
+    partial class CreateStoreRequest
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -242,7 +242,7 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
 
                     b.HasKey("Id");
 
-                    b.ToTable("StoreRequests");
+                    b.ToTable("StoreRequest");
                 });
 
             modelBuilder.Entity("Auth.Domain.Entities.Truck", b =>

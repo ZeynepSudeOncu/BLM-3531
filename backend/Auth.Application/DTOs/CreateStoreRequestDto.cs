@@ -1,6 +1,6 @@
 using System;
 
-namespace Auth.Application.DTOs.StoreRequests;
+namespace Auth.Application.DTOs;
 
 public class CreateStoreRequestDto
 {

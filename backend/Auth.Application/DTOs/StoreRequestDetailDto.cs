@@ -11,7 +11,6 @@ public class StoreRequestDetailDto
     public string? TruckPlateNumber { get; set; }
     public string? DriverName { get; set; }
     public DateTime CreatedAt { get; set; }
-    public DateTime? ApprovedAt { get; set; }
     public DateTime? PickedUpAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
 }

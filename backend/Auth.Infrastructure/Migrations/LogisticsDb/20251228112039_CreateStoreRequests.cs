@@ -6,14 +6,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Auth.Infrastructure.Migrations.LogisticsDb
 {
     /// <inheritdoc />
-    public partial class CreateStoreRequests : Migration
+    public partial class CreateStoreRequest : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
 
             migrationBuilder.CreateTable(
-                name: "StoreRequests",
+                name: "StoreRequest",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -26,7 +26,7 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_StoreRequests", x => x.Id);
+                    table.PrimaryKey("PK_StoreRequest", x => x.Id);
                 });
         }
 
@@ -34,7 +34,7 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "StoreRequests");
+                name: "StoreRequest");
         }
     }
 }

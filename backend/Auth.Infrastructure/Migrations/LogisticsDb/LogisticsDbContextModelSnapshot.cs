@@ -276,7 +276,7 @@ namespace Auth.Infrastructure.Migrations.LogisticsDb
 
                     b.HasKey("Id");
 
-                    b.ToTable("StoreRequests");
+                    b.ToTable("StoreRequest");
                 });
 
             modelBuilder.Entity("Auth.Domain.Entities.Truck", b =>

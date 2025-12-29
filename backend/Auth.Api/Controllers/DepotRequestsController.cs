@@ -1,4 +1,4 @@
-using Auth.Application.DTOs.StoreRequests;
+using Auth.Application.DTOs;
 using Auth.Domain.Entities;
 using Auth.Infrastructure.Logistics.Context;
 using Microsoft.AspNetCore.Authorization;
@@ -66,65 +66,46 @@ public class DepotRequestsController : ControllerBase
         return Ok(list);
     }
 
-    // PATCH: api/depot-requests/{id}/approve
-    [HttpPatch("{id:guid}/approve")]
-    public async Task<IActionResult> Approve(Guid id)
-    {
-        var depotId = GetDepotId();
+   [HttpPatch("{id:guid}/approve")]
+public async Task<IActionResult> Approve(Guid id, [FromBody] AssignTruckRequest req)
+{
+    if (req.TruckId == null)
+        return BadRequest("TruckId zorunlu.");
 
-        var req = await _context.StoreRequests.FirstOrDefaultAsync(x => x.Id == id && x.DepotId == depotId);
-        if (req == null) return NotFound("Talep bulunamadı.");
-        if (req.Status != "Pending") return BadRequest("Talep zaten işlenmiş.");
+    var r = await _context.StoreRequests.FirstOrDefaultAsync(x => x.Id == id);
+    if (r == null) return NotFound();
 
-        // depot stok kontrol
-        var depotProduct = await _context.DepotProducts
-            .FirstOrDefaultAsync(x => x.DepotId == depotId && x.ProductId == req.ProductId);
+    if (r.Status != "Pending")
+        return BadRequest("Sadece Pending istek onaylanır.");
 
-        if (depotProduct == null)
-            return BadRequest("Depoda bu ürün yok.");
+    var depotUserIdStr =
+        User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+        User.FindFirstValue("sub");
 
-        if (depotProduct.Quantity < req.RequestedQuantity)
-            return BadRequest("Depo stok yetersiz.");
+    if (string.IsNullOrEmpty(depotUserIdStr))
+        return Unauthorized();
 
-        // store stok kaydı (StoreProduct tablon: StoreProduct)
-        var storeProduct = await _context.StoreProduct
-            .FirstOrDefaultAsync(x => x.StoreId == req.StoreId && x.ProductId == req.ProductId);
+    r.Status = "Approved";
+    r.TruckId = req.TruckId;
+    r.ApprovedByDepotUserId = Guid.Parse(depotUserIdStr);
 
-        if (storeProduct == null)
-        {
-            storeProduct = new StoreProduct
-            {
-                Id = Guid.NewGuid(),
-                StoreId = req.StoreId,
-                ProductId = req.ProductId,
-                Quantity = 0
-            };
-            _context.StoreProduct.Add(storeProduct);
-        }
+    await _context.SaveChangesAsync();
+    return Ok(new { message = "Onaylandı, kamyon atandı." });
+}
 
-        // stok aktar
-        depotProduct.Quantity -= req.RequestedQuantity;
-        storeProduct.Quantity += req.RequestedQuantity;
 
-        req.Status = "Approved";
 
-        await _context.SaveChangesAsync();
-        return Ok(new { message = "Talep onaylandı ve stok aktarıldı." });
-    }
+[HttpPatch("{id:guid}/reject")]
+public async Task<IActionResult> Reject(Guid id)
+{
+    var r = await _context.StoreRequests.FirstOrDefaultAsync(x => x.Id == id);
+    if (r == null) return NotFound();
 
-    // PATCH: api/depot-requests/{id}/reject
-    [HttpPatch("{id:guid}/reject")]
-    public async Task<IActionResult> Reject(Guid id)
-    {
-        var depotId = GetDepotId();
+    if (r.Status != "Pending") return BadRequest("Sadece Pending istek reddedilir.");
 
-        var req = await _context.StoreRequests.FirstOrDefaultAsync(x => x.Id == id && x.DepotId == depotId);
-        if (req == null) return NotFound("Talep bulunamadı.");
-        if (req.Status != "Pending") return BadRequest("Talep zaten işlenmiş.");
+    r.Status = "Rejected";
+    await _context.SaveChangesAsync();
+    return Ok(new { message = "Reddedildi." });
+}
 
-        req.Status = "Rejected";
-        await _context.SaveChangesAsync();
-
-        return Ok(new { message = "Talep reddedildi." });
-    }
 }

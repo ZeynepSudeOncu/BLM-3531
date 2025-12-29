@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/http";
 import RequestTable from "./RequestTable"; // ✅ BURASI EKSİKTİ
 
-export default function StoreRequestsPage() {
+export default function Page() {
   const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {

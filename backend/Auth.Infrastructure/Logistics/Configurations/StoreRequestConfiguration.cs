@@ -8,7 +8,7 @@
 // {
 //     public void Configure(EntityTypeBuilder<Auth.Domain.Entities.StoreRequest> builder)
 //     {
-//         builder.ToTable("StoreRequests");
+//         builder.ToTable("StoreRequest");
         
 //         builder.HasKey(x => x.Id);
         
