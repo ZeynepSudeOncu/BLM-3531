@@ -13,6 +13,9 @@ using Auth.Infrastructure.Persistence;
 using Auth.Infrastructure.Services;
 using Microsoft.OpenApi.Models;
 using Auth.Application.Services;
+using Auth.Infrastructure.Repositories;
+using Auth.Application.Abstractions.Repositories;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -97,6 +100,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddScoped<Auth.Application.Services.ITruckService, Auth.Infrastructure.Services.TruckService>();
 builder.Services.AddScoped<Auth.Application.Services.IOrderService, Auth.Infrastructure.Services.OrderService>();
 builder.Services.AddScoped<Auth.Application.Abstractions.Services.IAuthService, Auth.Infrastructure.Services.Auth.AuthService>();
+builder.Services.AddScoped<IDriverRepository, DriverRepository>();
 
 
 var app = builder.Build();

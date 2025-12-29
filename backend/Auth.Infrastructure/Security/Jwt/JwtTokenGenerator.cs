@@ -15,7 +15,8 @@ public class JwtTokenGenerator(JwtOptions options, IJwtClock clock) : IJwtTokenG
     string email,
     string role,
     string? depotId = null,
-    string? storeId = null
+    string? storeId = null,
+    string? driverId = null
 )
 {
     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Key));
@@ -34,7 +35,11 @@ public class JwtTokenGenerator(JwtOptions options, IJwtClock clock) : IJwtTokenG
         claims.Add(new Claim("DepotId", depotId));
 
     if (!string.IsNullOrEmpty(storeId))
-        claims.Add(new Claim("StoreId", storeId)); // 🔥 ASIL EKSİK OLAN
+        claims.Add(new Claim("StoreId", storeId));
+        
+    if (!string.IsNullOrEmpty(driverId))
+            claims.Add(new Claim("DriverId", driverId));
+
 
     var token = new JwtSecurityToken(
         issuer: options.Issuer,
