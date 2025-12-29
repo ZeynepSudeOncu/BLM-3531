@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/http";
 
 type ReqItem = {
@@ -15,67 +15,63 @@ type ReqItem = {
   createdAt: string;
 };
 
-type Truck = {
+type TruckItem = {
   id: string;
   plate: string;
 };
 
 export default function DepotRequestsPage() {
   const [items, setItems] = useState<ReqItem[]>([]);
+  const [trucks, setTrucks] = useState<TruckItem[]>([]);
+  const [selectedTruckByReq, setSelectedTruckByReq] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
-  // 🔽 yeni state’ler
-  const [selectedRequest, setSelectedRequest] = useState<ReqItem | null>(null);
-  const [selectedTruckId, setSelectedTruckId] = useState<string>("");
-  const [trucks, setTrucks] = useState<Truck[]>([]);
-
-  // 📦 talepleri çek (MEVCUT AKIŞ – BOZULMADI)
   const load = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/depot-requests/my", {
-        params: { status: "Pending" },
+      const [reqRes, truckRes] = await Promise.all([
+        api.get("/depot-requests/my", { params: { status: "Pending" } }),
+        api.get("/trucks"), // sende trucks list endpoint'in var diye varsayıyorum
+      ]);
+
+      setItems(reqRes.data);
+      setTrucks(truckRes.data);
+
+      // default truck seçimi (ilk kamyon)
+      setSelectedTruckByReq((prev) => {
+        const next = { ...prev };
+        for (const r of reqRes.data as ReqItem[]) {
+          if (!next[r.id] && (truckRes.data?.length ?? 0) > 0) {
+            next[r.id] = truckRes.data[0].id;
+          }
+        }
+        return next;
       });
-      setItems(res.data);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🚚 kamyonları çek
-  const loadTrucks = async () => {
-    const res = await api.get("/trucks");
-    setTrucks(res.data);
-  };
-
   useEffect(() => {
     load();
-    loadTrucks();
   }, []);
 
-  // ❌ ESKİ approve YOK (bilerek sildik)
-
-  // ✅ kamyonla onay
-  const approveWithTruck = async () => {
-    if (!selectedRequest || !selectedTruckId) return;
-
+  const approve = async (id: string) => {
     try {
-      await api.patch(
-        `/depot-requests/${selectedRequest.id}/approve`,
-        { truckId: selectedTruckId }
-      );
+      const truckId = selectedTruckByReq[id];
+      if (!truckId) {
+        alert("Lütfen kamyon seç.");
+        return;
+      }
 
-      setSelectedRequest(null);
-      setSelectedTruckId("");
-
+      await api.patch(`/depot-requests/${id}/approve`, { truckId });
       await load();
-      alert("Talep onaylandı ve kamyon atandı");
+      alert("Onaylandı");
     } catch (e: any) {
-      alert(e?.response?.data?.message ?? "Onaylanamadı");
+      alert(e?.response?.data ?? "Onaylanamadı");
     }
   };
 
-  // ❌ reddet AKIŞI AYNI KALDI
   const reject = async (id: string) => {
     try {
       await api.patch(`/depot-requests/${id}/reject`);
@@ -101,9 +97,11 @@ export default function DepotRequestsPage() {
               <th className="p-3 text-left">Kod</th>
               <th className="p-3 text-right">Miktar</th>
               <th className="p-3 text-left">Tarih</th>
+              <th className="p-3 text-left">Kamyon</th>
               <th className="p-3 text-center">İşlem</th>
             </tr>
           </thead>
+
           <tbody>
             {items.map((x) => (
               <tr key={x.id} className="border-t">
@@ -111,20 +109,32 @@ export default function DepotRequestsPage() {
                 <td className="p-3">{x.productName}</td>
                 <td className="p-3">{x.productCode}</td>
                 <td className="p-3 text-right">{x.requestedQuantity}</td>
+                <td className="p-3">{new Date(x.createdAt).toLocaleString("tr-TR")}</td>
+
                 <td className="p-3">
-                  {new Date(x.createdAt).toLocaleString("tr-TR")}
+                  <select
+                    className="border rounded px-2 py-1 text-sm"
+                    value={selectedTruckByReq[x.id] ?? ""}
+                    onChange={(e) =>
+                      setSelectedTruckByReq((p) => ({ ...p, [x.id]: e.target.value }))
+                    }
+                  >
+                    {trucks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.plate}
+                      </option>
+                    ))}
+                  </select>
                 </td>
+
                 <td className="p-3 text-center">
                   <div className="flex gap-2 justify-center">
-                    {/* ✅ ONAYLA → MODAL AÇAR */}
                     <button
-                      onClick={() => setSelectedRequest(x)}
+                      onClick={() => approve(x.id)}
                       className="px-3 py-1 bg-green-600 text-white rounded text-sm"
                     >
                       Onayla
                     </button>
-
-                    {/* ❌ REDDET AYNI */}
                     <button
                       onClick={() => reject(x.id)}
                       className="px-3 py-1 bg-red-600 text-white rounded text-sm"
@@ -138,7 +148,7 @@ export default function DepotRequestsPage() {
 
             {items.length === 0 && (
               <tr>
-                <td className="p-4 text-gray-500" colSpan={6}>
+                <td className="p-4 text-gray-500" colSpan={7}>
                   Bekleyen talep yok.
                 </td>
               </tr>
@@ -146,48 +156,6 @@ export default function DepotRequestsPage() {
           </tbody>
         </table>
       </div>
-
-      {/* 🟢 KAMYON SEÇ MODAL */}
-      {selectedRequest && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded w-96">
-            <h2 className="text-lg font-semibold mb-3">Kamyon Seç</h2>
-
-            <select
-              className="border w-full p-2 mb-3"
-              value={selectedTruckId}
-              onChange={(e) => setSelectedTruckId(e.target.value)}
-            >
-              <option value="">Kamyon seç</option>
-              {trucks.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.plate}
-                </option>
-              ))}
-            </select>
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-3 py-1 border"
-                onClick={() => {
-                  setSelectedRequest(null);
-                  setSelectedTruckId("");
-                }}
-              >
-                İptal
-              </button>
-
-              <button
-                className="px-3 py-1 bg-green-600 text-white rounded"
-                disabled={!selectedTruckId}
-                onClick={approveWithTruck}
-              >
-                Onayla
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -15,8 +15,13 @@ const menu = [
     icon: <Package size={18} />,
   },
   {
-    label: "Depo Talepleri",
+    label: "Talep Listesi",
     path: "/dashboard/store/requests",
+    icon: <ClipboardList size={18} />,
+  },
+  {
+    label: "Talepleri Oluştur",
+    path: "/dashboard/store/create-request",
     icon: <ClipboardList size={18} />,
   },
 ];

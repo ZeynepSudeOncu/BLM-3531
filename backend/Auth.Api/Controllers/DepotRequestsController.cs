@@ -1,5 +1,3 @@
-using Auth.Application.DTOs;
-using Auth.Domain.Entities;
 using Auth.Infrastructure.Logistics.Context;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,80 +30,96 @@ public class DepotRequestsController : ControllerBase
         return Guid.Parse(depotIdStr);
     }
 
+    private Guid GetDepotUserId()
+    {
+        var userIdStr =
+            User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+            User.FindFirstValue("sub");
+
+        if (string.IsNullOrWhiteSpace(userIdStr))
+            throw new UnauthorizedAccessException("UserId (sub) claim bulunamadı.");
+
+        return Guid.Parse(userIdStr);
+    }
+
     // GET: api/depot-requests/my?status=Pending
     [HttpGet("my")]
     public async Task<IActionResult> GetMyDepotRequests([FromQuery] string? status = "Pending")
     {
         var depotId = GetDepotId();
 
-        var q =
-            from r in _context.StoreRequests.AsNoTracking()
-            join s in _context.Stores.AsNoTracking() on r.StoreId equals s.Id
-            join p in _context.Products.AsNoTracking() on r.ProductId equals p.Id
-            where r.DepotId == depotId
-            select new DepotStoreRequestListItem
-            {
-                Id = r.Id,
-                StoreId = r.StoreId,
-                StoreName = s.Name,
-                ProductId = r.ProductId,
-                ProductName = p.Name,
-                ProductCode = p.Code,
-                RequestedQuantity = r.RequestedQuantity,
-                Status = r.Status,
-                CreatedAt = r.CreatedAt
-            };
+        var q = _context.StoreRequests.AsNoTracking().Where(r => r.DepotId == depotId);
 
         if (!string.IsNullOrWhiteSpace(status))
-            q = q.Where(x => x.Status == status);
+            q = q.Where(r => r.Status == status);
 
         var list = await q
-            .OrderByDescending(x => x.CreatedAt)
+            .Join(_context.Stores, r => r.StoreId, s => s.Id, (r, s) => new { r, s })
+            .Join(_context.Products, x => x.r.ProductId, p => p.Id, (x, p) => new
+            {
+                id = x.r.Id,
+                storeId = x.s.Id,
+                storeName = x.s.Name,
+                productId = p.Id,
+                productName = p.Name,
+                productCode = p.Code,
+                requestedQuantity = x.r.RequestedQuantity,
+                status = x.r.Status,
+                createdAt = x.r.CreatedAt
+            })
+            .OrderByDescending(x => x.createdAt)
             .ToListAsync();
 
         return Ok(list);
     }
 
-   [HttpPatch("{id:guid}/approve")]
-public async Task<IActionResult> Approve(Guid id, [FromBody] AssignTruckRequest req)
-{
-    if (req.TruckId == null)
-        return BadRequest("TruckId zorunlu.");
+    public class ApproveDepotRequestDto
+    {
+        public Guid TruckId { get; set; }
+    }
 
-    var r = await _context.StoreRequests.FirstOrDefaultAsync(x => x.Id == id);
-    if (r == null) return NotFound();
+    // PATCH: api/depot-requests/{id}/approve
+    [HttpPatch("{id:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid id, [FromBody] ApproveDepotRequestDto dto)
+    {
+        if (dto.TruckId == Guid.Empty)
+            return BadRequest("TruckId zorunlu.");
 
-    if (r.Status != "Pending")
-        return BadRequest("Sadece Pending istek onaylanır.");
+        var depotId = GetDepotId();
+        var depotUserId = GetDepotUserId();
 
-    var depotUserIdStr =
-        User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-        User.FindFirstValue("sub");
+        var req = await _context.StoreRequests.FirstOrDefaultAsync(r => r.Id == id && r.DepotId == depotId);
+        if (req == null) return NotFound();
 
-    if (string.IsNullOrEmpty(depotUserIdStr))
-        return Unauthorized();
+        if (req.Status != "Pending")
+            return BadRequest("Sadece Pending talepler onaylanabilir.");
 
-    r.Status = "Approved";
-    r.TruckId = req.TruckId;
-    r.ApprovedByDepotUserId = Guid.Parse(depotUserIdStr);
+        var truckExists = await _context.Trucks.AnyAsync(t => t.Id == dto.TruckId);
+        if (!truckExists) return BadRequest("Kamyon bulunamadı.");
 
-    await _context.SaveChangesAsync();
-    return Ok(new { message = "Onaylandı, kamyon atandı." });
-}
+        req.Status = "Approved";
+        req.TruckId = dto.TruckId;
+        req.ApprovedByDepotUserId = depotUserId;
 
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Onaylandı." });
+    }
 
+    // PATCH: api/depot-requests/{id}/reject
+    [HttpPatch("{id:guid}/reject")]
+    public async Task<IActionResult> Reject(Guid id)
+    {
+        var depotId = GetDepotId();
 
-[HttpPatch("{id:guid}/reject")]
-public async Task<IActionResult> Reject(Guid id)
-{
-    var r = await _context.StoreRequests.FirstOrDefaultAsync(x => x.Id == id);
-    if (r == null) return NotFound();
+        var req = await _context.StoreRequests.FirstOrDefaultAsync(r => r.Id == id && r.DepotId == depotId);
+        if (req == null) return NotFound();
 
-    if (r.Status != "Pending") return BadRequest("Sadece Pending istek reddedilir.");
+        if (req.Status != "Pending")
+            return BadRequest("Sadece Pending talepler reddedilebilir.");
 
-    r.Status = "Rejected";
-    await _context.SaveChangesAsync();
-    return Ok(new { message = "Reddedildi." });
-}
+        req.Status = "Rejected";
+        await _context.SaveChangesAsync();
 
+        return Ok(new { message = "Reddedildi." });
+    }
 }

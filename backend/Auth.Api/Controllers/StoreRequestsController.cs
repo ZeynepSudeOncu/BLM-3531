@@ -1,10 +1,10 @@
 using Auth.Application.DTOs;
+using Auth.Domain.Entities;
 using Auth.Infrastructure.Logistics.Context;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using Auth.Domain.Entities;
 
 namespace Auth.Api.Controllers;
 
@@ -20,16 +20,34 @@ public class StoreRequestsController : ControllerBase
         _context = context;
     }
 
+    private Guid GetStoreId()
+    {
+        var storeIdStr =
+            User.FindFirstValue("storeId") ??
+            User.FindFirstValue("StoreId");
+
+        if (string.IsNullOrWhiteSpace(storeIdStr))
+            throw new UnauthorizedAccessException("StoreId claim yok");
+
+        return Guid.Parse(storeIdStr);
+    }
+
+    // POST: api/store-requests
     [HttpPost]
     public async Task<IActionResult> CreateRequest([FromBody] CreateStoreRequestDto dto)
     {
-        var storeIdStr = User.FindFirstValue("StoreId");
-        if (string.IsNullOrWhiteSpace(storeIdStr))
-            return Unauthorized("storeId claim yok");
+        if (dto.ProductId == Guid.Empty)
+            return BadRequest("ProductId boş olamaz.");
 
-        var storeId = Guid.Parse(storeIdStr);
+        if (dto.RequestedQuantity <= 0)
+            return BadRequest("RequestedQuantity 0'dan büyük olmalı.");
 
-        var store = await _context.Stores.FirstOrDefaultAsync(s => s.Id == storeId);
+        var storeId = GetStoreId();
+
+        var store = await _context.Stores
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == storeId);
+
         if (store == null)
             return BadRequest("Store bulunamadı.");
 
@@ -54,16 +72,35 @@ public class StoreRequestsController : ControllerBase
         _context.StoreRequests.Add(request);
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Talep oluşturuldu." });
+        return Ok(new { message = "Talep oluşturuldu.", id = request.Id });
     }
 
+    // GET: api/store-requests/my
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMyRequests()
+    {
+        var storeId = GetStoreId();
 
-    // [HttpPost]
-    // public async Task<IActionResult> CreateRequest([FromBody] CreateStoreRequestDto dto)
-    // {
-    //     var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
-    //     return Ok(claims);
-    // }
+        var list = await _context.StoreRequests
+            .AsNoTracking()
+            .Where(r => r.StoreId == storeId)
+            .Join(_context.Products,
+                r => r.ProductId,
+                p => p.Id,
+                (r, p) => new
+                {
+                    id = r.Id,
+                    status = r.Status,
+                    requestedQuantity = r.RequestedQuantity,
+                    createdAt = r.CreatedAt,
+                    pickedUpAt = r.PickedUpAt,
+                    deliveredAt = r.DeliveredAt,
+                    productName = p.Name,
+                    productCode = p.Code
+                })
+            .OrderByDescending(x => x.createdAt)
+            .ToListAsync();
 
-
+        return Ok(list);
+    }
 }
