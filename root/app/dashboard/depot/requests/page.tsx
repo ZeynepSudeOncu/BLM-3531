@@ -25,6 +25,9 @@ export default function DepotRequestsPage() {
   const [trucks, setTrucks] = useState<TruckItem[]>([]);
   const [selectedTruckByReq, setSelectedTruckByReq] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [allStoreRequests, setAllStoreRequests] = useState<ReqItem[]>([]);
+const [loadingAll, setLoadingAll] = useState(false);
+
 
   const load = async () => {
     setLoading(true);
@@ -56,6 +59,11 @@ export default function DepotRequestsPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    loadAllStoreRequests();
+  }, []);
+  
+
   const approve = async (id: string) => {
     try {
       const truckId = selectedTruckByReq[id];
@@ -81,6 +89,28 @@ export default function DepotRequestsPage() {
       alert(e?.response?.data ?? "Reddedilemedi");
     }
   };
+
+  const loadAllStoreRequests = async () => {
+    setLoadingAll(true);
+    try {
+      const res = await api.get("/depot-requests/store-requests");
+      setAllStoreRequests(res.data);
+    } finally {
+      setLoadingAll(false);
+    }
+  };
+
+  const statusTrMap: Record<string, string> = {
+    Pending: "Beklemede",
+    Approved: "Onaylandı",
+    OnTheWay: "Yolda",
+    InTransit: "Yolda",
+    Delivered: "Teslim Edildi",
+    Rejected: "Reddedildi",
+  };
+  
+  
+  
 
   if (loading) return <div>Yükleniyor...</div>;
 
@@ -156,6 +186,76 @@ export default function DepotRequestsPage() {
           </tbody>
         </table>
       </div>
+      {/* ================= STORE TALEPLERİ (TÜM DURUMLAR) ================= */}
+      <div className="mt-10">
+        <h2 className="text-xl font-semibold mb-4">
+          Store Talepleri (Tüm Durumlar)
+        </h2>
+
+        {loadingAll ? (
+          <div>Yükleniyor...</div>
+        ) : (
+          <div className="bg-white rounded shadow overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-3 text-left">Mağaza</th>
+                  <th className="p-3 text-left">Ürün</th>
+                  <th className="p-3 text-right">Miktar</th>
+                  <th className="p-3 text-left">Durum</th>
+                  <th className="p-3 text-left">Tarih</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {allStoreRequests.map((x) => (
+                  <tr key={x.id} className="border-t">
+                    <td className="p-3">{x.storeName}</td>
+                    <td className="p-3">{x.productName}</td>
+                    <td className="p-3 text-right">{x.requestedQuantity}</td>
+                    <td className="p-3">
+                      <span
+                        className={
+                          x.status === "Pending"
+                            ? "text-yellow-600"
+                            : x.status === "OnTheWay" || x.status === "InTransit"
+                            ? "text-blue-600"
+                            : x.status === "Delivered"
+                            ? "text-green-600"
+                            : x.status === "Rejected"
+                            ? "text-red-600"
+                            : ""
+                        }
+                      >
+                        {{
+                          Pending: "Beklemede",
+                          Approved: "Onaylandı",
+                          OnTheWay: "Yolda",
+                          InTransit: "Yolda",
+                          Delivered: "Teslim Edildi",
+                          Rejected: "Reddedildi",
+                        }[x.status] ?? x.status}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      {new Date(x.createdAt).toLocaleString("tr-TR")}
+                    </td>
+                  </tr>
+                ))}
+
+                {allStoreRequests.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-gray-500">
+                      Kayıt yok.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

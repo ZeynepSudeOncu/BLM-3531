@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Auth.Domain.Entities;
 
 namespace Auth.Api.Controllers;
 
@@ -122,4 +123,37 @@ public class DepotRequestsController : ControllerBase
 
         return Ok(new { message = "Reddedildi." });
     }
+
+
+    [HttpGet("store-requests")]
+[Authorize(Roles = "Depot")]
+public async Task<IActionResult> GetStoreRequestsForDepot()
+{
+    var depotId = Guid.Parse(
+        User.FindFirstValue("DepotId") ??
+        User.FindFirstValue("depotId")!
+    );
+
+    var list =
+        from r in _context.StoreRequests
+        join s in _context.Stores on r.StoreId equals s.Id
+        join p in _context.Products on r.ProductId equals p.Id
+        where r.DepotId == depotId
+        orderby r.CreatedAt descending
+        select new
+        {
+            r.Id,
+            StoreName = s.Name,
+            ProductName = p.Name,
+            r.RequestedQuantity,
+            r.Status,
+            r.CreatedAt,
+            r.PickedUpAt,
+            r.DeliveredAt
+        };
+
+    return Ok(await list.ToListAsync());
+}
+
+
 }
