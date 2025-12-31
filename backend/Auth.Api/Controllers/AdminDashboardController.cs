@@ -121,58 +121,173 @@ public class AdminDashboardController : ControllerBase
         });
     }
 
-[HttpGet("product-demand")]
-public async Task<IActionResult> GetProductDemand([FromQuery] int days = 7)
-{
-    var fromDate = DateTime.UtcNow.Date.AddDays(-days);
+    [HttpGet("product-demand")]
+    public async Task<IActionResult> GetProductDemand([FromQuery] int days = 7)
+    {
+        var fromDate = DateTime.UtcNow.Date.AddDays(-days);
 
-    // En çok talep edilenler
-    var topProducts = await _context.StoreRequests
-        .Where(r => r.CreatedAt >= fromDate)
-        .GroupBy(r => r.ProductId)
-        .Select(g => new
-        {
-            ProductId = g.Key,
-            RequestCount = g.Count()
-        })
-        .OrderByDescending(x => x.RequestCount)
-        .Take(5)
-        .Join(
-            _context.Products,
-            g => g.ProductId,
-            p => p.Id,
-            (g, p) => new
+        // En çok talep edilenler
+        var topProducts = await _context.StoreRequests
+            .Where(r => r.CreatedAt >= fromDate)
+            .GroupBy(r => r.ProductId)
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                RequestCount = g.Count()
+            })
+            .OrderByDescending(x => x.RequestCount)
+            .Take(5)
+            .Join(
+                _context.Products,
+                g => g.ProductId,
+                p => p.Id,
+                (g, p) => new
+                {
+                    productId = p.Id,
+                    productName = p.Name,
+                    productCode = p.Code,
+                    requestCount = g.RequestCount
+                }
+            )
+            .ToListAsync();
+
+        // Hiç talep almayanlar
+        var requestedProductIds = await _context.StoreRequests
+            .Select(r => r.ProductId)
+            .Distinct()
+            .ToListAsync();
+
+        var neverRequested = await _context.Products
+            .Where(p => !requestedProductIds.Contains(p.Id))
+            .Select(p => new
             {
                 productId = p.Id,
                 productName = p.Name,
-                productCode = p.Code,
-                requestCount = g.RequestCount
-            }
-        )
-        .ToListAsync();
+                productCode = p.Code
+            })
+            .ToListAsync();
 
-    // Hiç talep almayanlar
-    var requestedProductIds = await _context.StoreRequests
-        .Select(r => r.ProductId)
-        .Distinct()
-        .ToListAsync();
-
-    var neverRequested = await _context.Products
-        .Where(p => !requestedProductIds.Contains(p.Id))
-        .Select(p => new
+        return Ok(new
         {
-            productId = p.Id,
-            productName = p.Name,
-            productCode = p.Code
+            topProducts,
+            neverRequested
+        });
+    }
+
+[HttpGet("delivery-metrics")]
+public async Task<IActionResult> GetDeliveryMetrics([FromQuery] int delayHours = 24)
+{
+    var delivered = await _context.StoreRequests
+        .Where(r => r.DeliveredAt != null && r.PickedUpAt != null)
+        .Select(r => new
+        {
+            r.Id,
+            r.DepotId,
+            PickedUpAt = r.PickedUpAt!.Value,
+            DeliveredAt = r.DeliveredAt!.Value
         })
         .ToListAsync();
 
-    return Ok(new
+    if (delivered.Count == 0)
     {
-        topProducts,
-        neverRequested
-    });
-}
+        return Ok(new
+        {
+            averageDeliveryHours = 0,
+            fastestDepot = (object?)null,
+            slowestDepot = (object?)null,
+            delayedCount = 0,
+            delayed = Array.Empty<object>()
+        });
+    }
 
+    // Ortalama teslim süresi
+    var averageDeliveryHours = Math.Round(
+        delivered.Average(r => (r.DeliveredAt - r.PickedUpAt).TotalHours),
+        2
+    );
+
+    // Depo bazlı ortalama
+    var depotAverages = delivered
+        .GroupBy(r => r.DepotId)
+        .Select(g => new
+        {
+            DepotId = g.Key,
+            AvgHours = Math.Round(
+                g.Average(r => (r.DeliveredAt - r.PickedUpAt).TotalHours),
+                2
+            )
+        })
+        .ToList();
+
+    var depotNames = await _context.Depots
+        .Where(d => depotAverages.Select(x => x.DepotId).Contains(d.Id))
+        .ToDictionaryAsync(d => d.Id, d => d.Name);
+
+    var depotResults = depotAverages
+        .Select(x => new
+        {
+            depotId = x.DepotId,
+            depotName = depotNames.GetValueOrDefault(x.DepotId),
+            avgHours = x.AvgHours
+        })
+        .ToList();
+
+    var fastestDepot = depotResults
+        .OrderBy(x => x.avgHours)
+        .FirstOrDefault();
+
+    var slowestDepot = depotResults
+        .OrderByDescending(x => x.avgHours)
+        .FirstOrDefault();
+
+    // Geciken teslimatlar
+    var delayedDetailed = await _context.StoreRequests
+    .Where(r =>
+        r.DeliveredAt != null &&
+        r.PickedUpAt != null &&
+        (r.DeliveredAt.Value - r.PickedUpAt.Value).TotalHours > delayHours
+    )
+    .Join(
+        _context.Stores,
+        r => r.StoreId,
+        s => s.Id,
+        (r, s) => new { r, store = s }
+    )
+    .Join(
+        _context.Depots,
+        rs => rs.r.DepotId,
+        d => d.Id,
+        (rs, d) => new { rs.r, rs.store, depot = d }
+    )
+    .Join(
+        _context.Products,
+        rsd => rsd.r.ProductId,
+        p => p.Id,
+        (rsd, p) => new
+        {
+            requestId = rsd.r.Id,
+            storeName = rsd.store.Name,
+            depotName = rsd.depot.Name,
+            productName = p.Name,
+            requestedQuantity = rsd.r.RequestedQuantity,
+            delayHours = Math.Round(
+                (rsd.r.DeliveredAt!.Value - rsd.r.PickedUpAt!.Value).TotalHours,
+                2
+            )
+        }
+    )
+    .ToListAsync();
+
+
+    return Ok(new
+{
+    averageDeliveryHours,
+    fastestDepot,
+    slowestDepot,
+    delayedCount = delayedDetailed.Count,
+    delayed = delayedDetailed
+});
+
+}
 
 }

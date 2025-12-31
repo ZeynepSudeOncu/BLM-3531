@@ -18,6 +18,7 @@ export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
   const [critical, setCritical] = useState<any>(null);
   const [productDemand, setProductDemand] = useState<any>(null);
+  const [delivery, setDelivery] = useState<any>(null);
 
   useEffect(() => {
     api.get("/admin/dashboard").then(res => setData(res.data));
@@ -25,6 +26,8 @@ export default function AdminDashboardPage() {
       .then(res => setCritical(res.data));
     api.get("/admin/dashboard/product-demand?days=7")
       .then(res => setProductDemand(res.data));
+    api.get("/admin/dashboard/delivery-metrics?delayHours=24")
+      .then(res => setDelivery(res.data));
     
   }, []);
 
@@ -191,6 +194,72 @@ export default function AdminDashboardPage() {
   </div>
 )}
 
+{/* ================= TESLİMAT SÜRESİ ANALİZİ ================= */}
+{delivery && (
+  <div className="space-y-6">
+
+    {/* Özet Kartlar */}
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <Card
+        title="Ortalama Teslim Süresi (saat)"
+        value={delivery.averageDeliveryHours}
+      />
+      <Card
+        title="En Hızlı Depo"
+        value={delivery.fastestDepot?.avgHours ?? 0}
+        subtitle={delivery.fastestDepot?.depotName}
+      />
+      <Card
+        title="En Yavaş Depo"
+        value={delivery.slowestDepot?.avgHours ?? 0}
+        subtitle={delivery.slowestDepot?.depotName}
+        danger
+      />
+      <Card
+        title="Geciken Teslimatlar"
+        value={delivery.delayedCount}
+        danger
+      />
+    </div>
+
+    {/* ================= GECİKEN TESLİMATLAR ================= */}
+{delivery.delayedCount > 0 && (
+  <div className="bg-white rounded shadow p-4">
+    <h2 className="font-semibold mb-3 text-red-600">
+      ⏱ Geciken Teslimatlar (24+ saat)
+    </h2>
+
+    <table className="w-full text-sm">
+      <thead className="bg-gray-100">
+        <tr>
+          <th className="p-2 text-left">Mağaza</th>
+          <th className="p-2 text-left">Depo</th>
+          <th className="p-2 text-left">Ürün</th>
+          <th className="p-2 text-right">Miktar</th>
+          <th className="p-2 text-right">Gecikme (saat)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {delivery.delayed.map((x: any) => (
+          <tr key={x.requestId} className="border-t">
+            <td className="p-2">{x.storeName}</td>
+            <td className="p-2">{x.depotName}</td>
+            <td className="p-2">{x.productName}</td>
+            <td className="p-2 text-right">{x.requestedQuantity}</td>
+            <td className="p-2 text-right font-semibold text-red-600">
+              {x.delayHours}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
+  </div>
+)}
+
+
     </div>
   );
 }
@@ -199,10 +268,12 @@ export default function AdminDashboardPage() {
 function Card({
   title,
   value,
+  subtitle,
   danger,
 }: {
   title: string;
   value: number;
+  subtitle?: string;
   danger?: boolean;
 }) {
   return (
@@ -219,6 +290,9 @@ function Card({
       >
         {value}
       </div>
+      {subtitle && (
+        <div className="text-xs text-gray-500 mt-1">{subtitle}</div>
+      )}
     </div>
   );
 }
