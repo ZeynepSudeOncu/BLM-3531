@@ -8,7 +8,7 @@ namespace Auth.Api.Controllers;
 
 [ApiController]
 [Route("api/truck-loads")]
-[Authorize(Roles = "Depot,Admin")]
+[Authorize(Roles = "Depot,Admin,Driver")]
 public class TruckLoadsController : ControllerBase
 {
     private readonly LogisticsDbContext _context;

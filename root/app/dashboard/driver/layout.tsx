@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { label: "Dashboard", href: "/dashboard/driver" },
-  { label: "Deliveries", href: "/dashboard/driver/deliveries" },
+  { label: "Ana Sayfa", href: "/dashboard/driver" },
+  { label: "Teslimatlarım", href: "/dashboard/driver/deliveries" },
 ];
 
 export default function DriverLayout({ children }: { children: React.ReactNode }) {
